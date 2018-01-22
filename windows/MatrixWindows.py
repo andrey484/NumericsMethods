@@ -3,6 +3,7 @@ import wx.grid as grid
 import numpy as np
 
 from utils.Utils import Utils
+from windows.ResultWindow import ResultWindow
 
 
 class MatrixWindowPanel(wx.Panel):
@@ -33,7 +34,15 @@ class MatrixWindowPanel(wx.Panel):
 
         fadeev = wx.Button(self, label='Fadeev')
         fadeev.Bind(wx.EVT_BUTTON, self.fadeev)
+
+        krylov = wx.Button(self, label='Krylov')
+        krylov.Bind(wx.EVT_BUTTON, self.krylov)
+
+        danylevskiy = wx.Button(self, label='Danylevskiy')
+        danylevskiy.Bind(wx.EVT_BUTTON, self.danylevskiy)
         self.button_sizer.Add(fadeev, 0, wx.ALL, 5)
+        self.button_sizer.Add(krylov, 0, wx.ALL, 5)
+        self.button_sizer.Add(danylevskiy, 0, wx.ALL, 5)
 
         self.static_text_sizer.Add(wx.StaticText(self, label='Matrix'), proportion=1, flag=wx.ALL | wx.EXPAND, border=5)
 
@@ -60,7 +69,28 @@ class MatrixWindowPanel(wx.Panel):
                 input_arr[i][j] = self.matrix.GetCellValue(i, j)
         res = Utils.fadeev(input_arr)
         print(res)
+        ResultWindow(self, 'Fadeev', len(res[1]), res[1])
+        # ResultWindow(self, 'Fadeev')
         # print(np.linalg.eig(input_arr))
+
+    def krylov(self, event):
+        input_arr = np.zeros((Utils.matrix_order, Utils.matrix_order))
+        for i in range(Utils.matrix_order):
+            for j in range(Utils.matrix_order):
+                input_arr[i][j] = self.matrix.GetCellValue(i, j)
+        res = Utils.krylov(input_arr)
+        print(res)
+        ResultWindow(self, 'Krylov', len(res[1]), res[1])
+
+    def danylevskiy(self, event):
+        input_arr = np.zeros((Utils.matrix_order, Utils.matrix_order))
+        for i in range(Utils.matrix_order):
+            for j in range(Utils.matrix_order):
+                input_arr[i][j] = self.matrix.GetCellValue(i, j)
+        res = Utils.danylevskyi(input_arr)
+        print(res)
+        ResultWindow(self, 'Danylevskiy', len(res[1]), res[1])
+
 
     def generate_random_matrix(self, event):
         from_gen = int(self.from_gen.GetValue())

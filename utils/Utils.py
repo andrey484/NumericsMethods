@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.linalg as sp
 
 
 class Utils(object):
@@ -24,15 +25,45 @@ class Utils(object):
 
     @staticmethod
     def krylov(arr):
+        Utils.input_array = np.copy(arr)
         arr = np.array(arr)
-        y = np.copy(np.zeros((4,4)))
+        y = np.copy(np.zeros((Utils.matrix_order, Utils.matrix_order)))
         # y.append(np.copy(np.identity(Utils.matrix_order)[0, :]))
-        y[0] = (np.copy(np.identity(4)[0, :]))
-        for k in range(1, 4):
+        y[0] = (np.copy(np.identity(Utils.matrix_order)[0, :]))
+        for k in range(1, Utils.matrix_order):
             y[k] = arr.dot(y[k - 1])
-        y[0] = arr.dot(y[3])
+        answers = arr.dot(y[Utils.matrix_order - 1])
         y = np.copy(y.transpose())
-        answers = np.copy(y[:, 0])
+        for i in range(int(Utils.matrix_order / 2)):
+            y[:, i], y[:, Utils.matrix_order - 1 - i] = np.copy(y[:, Utils.matrix_order - 1 - i]), np.copy(y[:, i])
+        result = np.linalg.solve(y, answers)
+        res = []
+        res.append(result)
+        lambdas_ = Utils.root(result)
+        res.append(lambdas_)
+        return res
+
+    @staticmethod
+    def danylevskyi(arr):
+        Utils.input_array = np.copy(arr)
+        C = None
+        k = 1
+        for i in range(Utils.matrix_order - 1):
+            B = np.eye(Utils.matrix_order)
+            if i >= 1:
+                arr = np.copy(C)
+            for j in range(Utils.matrix_order):
+                if j != Utils.matrix_order - 1 - k:
+                    B[Utils.matrix_order - 1 - k][j] = -(
+                        arr[Utils.matrix_order - 1 - i][j] / arr[Utils.matrix_order - 1 - i][
+                            Utils.matrix_order - 1 - k])
+                else:
+                    B[Utils.matrix_order - 1 - k][Utils.matrix_order - 1 - k] = 1 / arr[Utils.matrix_order - 1 - i][
+                        Utils.matrix_order - 1 - k]
+            C = np.linalg.multi_dot([np.linalg.inv(B), arr, B])
+            k += 1
+        coef = C[0, :]
+        return [coef, Utils.root(coef)]
 
     @staticmethod
     def fadeev(arr):
@@ -135,11 +166,11 @@ class Utils(object):
                 coef = Utils.gorn(coef, -roots[count])
                 count += 1
                 i = -border
-            if len(coef) == 2:
-                kv = Utils.kvadr(coef)
-                roots[count] = kv[0]
-                roots[count + 1] = kv[1]
-                break
+                if len(coef) == 2:
+                    kv = Utils.kvadr(coef)
+                    roots[count] = kv[0]
+                    roots[count + 1] = kv[1]
+                    break
         return roots
 
     @staticmethod
@@ -189,14 +220,25 @@ class Utils(object):
         p[1] *= -1.0
         D = p[0] * p[0] - 4 * p[1]
         res = np.zeros(2)
-        res[0] = ((-1.0) * p[0] + np.sqrt(D)) / 2.0
-        res[1] = ((-1.0) * p[0] - np.sqrt(D)) / 2.0
+        try:
+            res[0] = ((-1.0) * p[0] + np.sqrt(D)) / 2.0
+            res[1] = ((-1.0) * p[0] - np.sqrt(D)) / 2.0
+        except RuntimeError as exc:
+            raise exc
         return res
 
 
 if __name__ == "__main__":
-    arr = [[2.2, 1, 0.5, 2],
-           [1, 1.3, 2, 1],
-           [0.5, 2, 0.5, 1.6],
-           [2, 1, 1.6, 2]]
+    Utils.matrix_order = 3
+    # arr = [[2.2, 1, 0.5, 2],
+    #        [1, 1.3, 2, 1],
+    #        [0.5, 2, 0.5, 1.6],
+    #        [2, 1, 1.6, 2]]
+    arr = [[2, 1, 0],
+           [1, 2, 1],
+           [0, 1, 2]]
+    # arr = [[3, 4],
+    #        [4, 3]]
+    print(Utils.fadeev(arr))
     print(Utils.krylov(arr))
+    print(Utils.danylevskyi(arr))
